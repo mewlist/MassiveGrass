@@ -18,6 +18,7 @@ namespace Mewlist.MassiveGrass.Strategy
 
             var meshData = new MeshData(elements.Count, 2);
             var actualCount = 0;
+            var alphas      = new float[elements.Count];
 
             for (var i = 0; i < elements.Count; i++)
             {
@@ -33,9 +34,19 @@ namespace Mewlist.MassiveGrass.Strategy
                     alpha = Mathf.Max(alpha, v);
                 }
 
-                if (alpha >= profile.AlphaMapThreshold)
-                    AddQuad(meshData, profile, element, actualCount++);
+                alphas[i] = alpha;
+
             }
+
+            await Task.Run(() =>
+            {
+                for (var i = 0; i < elements.Count; i++)
+                {
+                    var element  = elements[i];
+                    if (alphas[i] >= profile.AlphaMapThreshold)
+                        AddQuad(meshData, profile, element, actualCount++);
+                }
+            });
 
             var mesh = new Mesh();
             mesh.vertices  = meshData.vertices.Take(4 * actualCount).ToArray();

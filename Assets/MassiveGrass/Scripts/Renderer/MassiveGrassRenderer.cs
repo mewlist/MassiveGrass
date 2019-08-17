@@ -2,14 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using TMPro;
 using UnityEngine;
 
 namespace Mewlist.MassiveGrass
 {
     public class MassiveGrassRenderer : IDisposable, ICellOperationCallbacks
     {
-        private const int MaxParallelJobCount = 32;
+        private const int MaxParallelJobCount = 100;
         private Camera           camera;
         private Terrain          terrain;
         private List<Texture2D>  alphaMaps;
@@ -54,11 +53,11 @@ namespace Mewlist.MassiveGrass
             meshBuilder = new MeshBuilder();
         }
 
-        public void Reset(List<Texture2D> alphaMaps, MassiveGrassProfile profile)
+        public async void Reset(List<Texture2D> alphaMaps, MassiveGrassProfile profile)
         {
             this.profile   = profile;
             this.alphaMaps = alphaMaps;
-            grid.Activate(camera.transform.position, -1, this);
+            await grid.Activate(camera.transform.position, -1, this);
             OnBeginRender();
         }
 
@@ -78,11 +77,11 @@ namespace Mewlist.MassiveGrass
             requestQueue.Remove(index);
         }
 
-        public void OnBeginRender()
+        public async void OnBeginRender()
         {
             // mesh preparation
             if (camera == null) return;
-            grid.Activate(camera.transform.position, profile.Radius, this);
+            await grid.Activate(camera.transform.position, profile.Radius, this);
         }
 
         public void Dispose()
@@ -90,24 +89,26 @@ namespace Mewlist.MassiveGrass
             camera = null;
         }
 
-        public async void Create(MassiveGrassGrid.CellIndex index, Rect rect)
+        public void Create(MassiveGrassGrid.CellIndex index, Rect rect)
         {
             if (activeIndices.Contains(index)) return;
 
-            // メッシュ生成タスクを呼び出す
             activeIndices.Add(index);
             if (!requestQueue.ContainsKey(index))
             {
                 requestQueue[index] = (new Request(index, rect));
                 if (requestQueue.Count == 1)
-                {
-                    while (requestQueue.Count > 0)
-                    {
-                        var processSize = Mathf.Min(MaxParallelJobCount, Mathf.CeilToInt(requestQueue.Count));
-                        var tasks = requestQueue.Take(processSize).Select(x => Build(x.Key));
-                        await Task.WhenAll(tasks);
-                    }
-                }
+                    ProcessQueue();
+            }
+        }
+
+        private async Task ProcessQueue()
+        {
+            while (requestQueue.Count > 0)
+            {
+                var processSize = Mathf.Min(MaxParallelJobCount, Mathf.CeilToInt(requestQueue.Count));
+                var tasks = requestQueue.Take(processSize).Select(x => Build(x.Key));
+                await Task.WhenAll(tasks);
             }
         }
 

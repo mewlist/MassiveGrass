@@ -116,33 +116,41 @@ namespace Mewlist.MassiveGrass
             return list;
         }
 
-        public void Activate(Vector3 position, float range, ICellOperationCallbacks cellOperationCallback)
+        public async Task Activate(Vector3 position, float range, ICellOperationCallbacks cellOperationCallback)
         {
             var activatedIndices = InnerSphereIndices(position, range);
-
-            foreach (var activatedIndex in activatedIndices)
+            var entered = new List<CellIndex>();
+            var exited = new List<CellIndex>();
+            await Task.Run(() =>
             {
-                var found = false;
-                foreach (var activeIndex in activeIndices)
-                {
-                    if (!activatedIndex.Equals(activeIndex)) continue;
-                    found = true;
-                    break;
-                }
-                if (!found) cellOperationCallback.Create(activatedIndex, RectFromIndex(activatedIndex));
-            }
-
-            foreach (var activeIndex in activeIndices)
-            {
-                var found = false;
                 foreach (var activatedIndex in activatedIndices)
                 {
-                    if (!activeIndex.Equals(activatedIndex)) continue;
-                    found = true;
-                    break;
+                    var found = false;
+                    foreach (var activeIndex in activeIndices)
+                    {
+                        if (!activatedIndex.Equals(activeIndex)) continue;
+                        found = true;
+                        break;
+                    }
+                    if (!found) entered.Add(activatedIndex);
                 }
-                if (!found) cellOperationCallback.Remove(activeIndex);
-            }
+
+                foreach (var activeIndex in activeIndices)
+                {
+                    var found = false;
+                    foreach (var activatedIndex in activatedIndices)
+                    {
+                        if (!activeIndex.Equals(activatedIndex)) continue;
+                        found = true;
+                        break;
+                    }
+                    if (!found) exited.Add(activeIndex);
+                }
+            });
+            foreach (var cellIndex in exited)
+                cellOperationCallback.Remove(cellIndex);
+            foreach (var cellIndex in entered)
+                cellOperationCallback.Create(cellIndex, RectFromIndex(cellIndex));
             activeIndices = activatedIndices;
         }
     }
