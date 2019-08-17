@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5c793b0f7de44a2f9666b4eb984b066, type: 3}
   m_Name: SampleGrassProfile
   m_EditorClassIdentifier: 
-  PaintTextureIndex: 01000000
+  PaintTextureIndex: 02000000
   Scale: {x: 3, y: 1.5}
-  Radius: 1000
+  Radius: 200
   GridSize: 25
   Slant: 0.15
   AmountPerBlock: 800
