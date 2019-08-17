@@ -22,14 +22,19 @@ namespace Mewlist.MassiveGrass.Strategy
             for (var i = 0; i < elements.Count; i++)
             {
                 var element  = elements[i];
-                var layer    = profile.PaintTextureIndex[0];
-                var alpha    = alphaMaps[layer].GetPixel(
-                    Mathf.RoundToInt((float) w * element.normalizedPosition.y),
-                    Mathf.RoundToInt((float) h * element.normalizedPosition.x)).a;
-                if (alpha > profile.AlphaMapThreshold)
+                var layers   = profile.PaintTextureIndex;
+                var alpha    = 0f;
+
+                foreach (var layer in layers)
                 {
-                    AddQuad(meshData, profile, element, actualCount++);
+                    var v = alphaMaps[layer].GetPixel(
+                        Mathf.RoundToInt((float) w * element.normalizedPosition.y),
+                        Mathf.RoundToInt((float) h * element.normalizedPosition.x)).a;
+                    alpha = Mathf.Max(alpha, v);
                 }
+
+                if (alpha >= profile.AlphaMapThreshold)
+                    AddQuad(meshData, profile, element, actualCount++);
             }
 
             var mesh = new Mesh();

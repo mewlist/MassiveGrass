@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using JetBrains.Annotations;
+﻿using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 
@@ -75,12 +74,27 @@ namespace Mewlist.MassiveGrass
 
         private void Update()
         {
+            Render();
+        }
+
+        private void Render()
+        {
             foreach (var massiveGrassRenderer in renderers.Values)
                 massiveGrassRenderer.Render();
         }
 
+        private bool baking = false;
+        private bool reserveBaking = false;
         public void Bake()
         {
+            if (baking)
+            {
+                reserveBaking = true;
+                return;
+            }
+
+            Debug.Log("Baking");
+            baking = true;
             foreach (var texture2D in alphaMaps)
             {
                 DestroyImmediate(texture2D);
@@ -98,12 +112,32 @@ namespace Mewlist.MassiveGrass
                 var texture = AlphamapBaker.CreateAndBake(targetTerrain, new []{i});
                 alphaMaps.Add(texture);
             }
+            baking = false;
+            Debug.Log("Baking Done");
+            if (reserveBaking)
+            {
+                reserveBaking = false;
+                Bake();
+            }
         }
 
-        public void Refresh()
+        public async void BakeAndRefreshAsync()
         {
-            Clear();
+            var context = SynchronizationContext.Current;
+            await Task.Run(() =>
+            {
+                context.Post(_ => Bake(), null);
+                context.Post(_ => Refresh(), null);
+            });
+        }
+
+        public async void Refresh()
+        {
+            Debug.Log("Refresh");
+            foreach (var massiveGrassRenderer in renderers.Values)
+                massiveGrassRenderer.Reset(alphaMaps, profile);
             SetupBounds();
+            Render();
         }
 
         private void OnWillRenderObject()
@@ -113,6 +147,7 @@ namespace Mewlist.MassiveGrass
 
         private void OnBeginRender(Camera camera)
         {
+            if (camera == null) return;
             if (profile == null) return;
 
             // カメラ毎に Renderer を作る

@@ -1,13 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
-using Object = System.Object;
 
 namespace Mewlist.MassiveGrass
 {
     public class MassiveGrassRenderer : IDisposable, ICellOperationCallbacks
     {
+        private const int MaxParallelJobCount = 32;
         private Camera           camera;
         private Terrain          terrain;
         private List<Texture2D>  alphaMaps;
@@ -18,10 +20,29 @@ namespace Mewlist.MassiveGrass
         private Dictionary<MassiveGrassGrid.CellIndex, Mesh> meshes
             = new Dictionary<MassiveGrassGrid.CellIndex, Mesh>();
 
+        private HashSet<MassiveGrassGrid.CellIndex> activeIndices
+            = new HashSet<MassiveGrassGrid.CellIndex>();
+
         private MeshBuilder meshBuilder;
         private MassiveGrassProfile profile;
 
-        public MassiveGrassRenderer(Camera camera, Terrain terrain, List<Texture2D> alphaMaps, MassiveGrassProfile profile)
+        private class Request
+        {
+            public MassiveGrassGrid.CellIndex index;
+            public Rect rect;
+
+            public Request(MassiveGrassGrid.CellIndex index, Rect rect)
+            {
+                this.index = index;
+                this.rect = rect;
+            }
+        }
+
+        private Dictionary<MassiveGrassGrid.CellIndex, Request> requestQueue =
+            new Dictionary<MassiveGrassGrid.CellIndex, Request>();
+
+        public MassiveGrassRenderer(Camera camera, Terrain terrain, List<Texture2D> alphaMaps,
+            MassiveGrassProfile profile)
         {
             this.camera    = camera;
             this.terrain   = terrain;
@@ -33,8 +54,33 @@ namespace Mewlist.MassiveGrass
             meshBuilder = new MeshBuilder();
         }
 
+        public void Reset(List<Texture2D> alphaMaps, MassiveGrassProfile profile)
+        {
+            this.profile   = profile;
+            this.alphaMaps = alphaMaps;
+            grid.Activate(camera.transform.position, -1, this);
+            OnBeginRender();
+        }
+
+        private async Task Build(MassiveGrassGrid.CellIndex index)
+        {
+            var request = requestQueue[index];
+            var rect  = request.rect;
+            var mesh = await meshBuilder.Build(terrain, alphaMaps, index, rect, profile);
+            if (!activeIndices.Contains(index))
+            {
+                SafeDestroy(mesh);
+                requestQueue.Remove(index);
+                return;
+            }
+
+            meshes[index] = mesh;
+            requestQueue.Remove(index);
+        }
+
         public void OnBeginRender()
         {
+            // mesh preparation
             if (camera == null) return;
             grid.Activate(camera.transform.position, profile.Radius, this);
         }
@@ -46,18 +92,45 @@ namespace Mewlist.MassiveGrass
 
         public async void Create(MassiveGrassGrid.CellIndex index, Rect rect)
         {
+            if (activeIndices.Contains(index)) return;
+
             // メッシュ生成タスクを呼び出す
-            meshes[index] = await meshBuilder.Build(terrain, alphaMaps, index, rect, profile);
+            activeIndices.Add(index);
+            if (!requestQueue.ContainsKey(index))
+            {
+                requestQueue[index] = (new Request(index, rect));
+                if (requestQueue.Count == 1)
+                {
+                    while (requestQueue.Count > 0)
+                    {
+                        var processSize = Mathf.Min(MaxParallelJobCount, Mathf.CeilToInt(requestQueue.Count));
+                        var tasks = requestQueue.Take(processSize).Select(x => Build(x.Key));
+                        await Task.WhenAll(tasks);
+                    }
+                }
+            }
         }
 
         public void Remove(MassiveGrassGrid.CellIndex index)
         {
-            if (Application.isPlaying)
-                UnityEngine.Object.Destroy(meshes[index]);
-            else
-                UnityEngine.Object.DestroyImmediate(meshes[index]);
-            meshes.Remove(index);
+            if (!activeIndices.Contains(index)) return;
+            if (meshes.ContainsKey(index))
+            {
+                SafeDestroy(meshes[index]);
+                meshes.Remove(index);
+            }
+
+            activeIndices.Remove(index);
         }
+
+        private void SafeDestroy(Mesh mesh)
+        {
+            if (Application.isPlaying)
+                UnityEngine.Object.Destroy(mesh);
+            else
+                UnityEngine.Object.DestroyImmediate(mesh);
+        }
+
 
         public void Render()
         {
