@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -11,16 +13,59 @@ namespace Mewlist.MassiveGrass
     [ExecuteInEditMode]
     public class MassiveGrass : MonoBehaviour
     {
+        private class Renderers : IDisposable
+        {
+            public Dictionary<MassiveGrassProfile, MassiveGrassRenderer> renderers =
+                new Dictionary<MassiveGrassProfile, MassiveGrassRenderer>();
+
+            public void OnBeginRender(
+                Camera camera,
+                MassiveGrassProfile profile,
+                Terrain terrain,
+                List<Texture2D> alphaMaps)
+            {
+                if (!renderers.ContainsKey(profile))
+                {
+                    renderers[profile] = new MassiveGrassRenderer(camera, terrain, alphaMaps, profile);
+                    Debug.Log($" renderer for {profile} created on {camera}");
+                }
+                renderers[profile].OnBeginRender();
+            }
+
+            public void Render()
+            {
+                foreach (var renderersValue in renderers.Values)
+                    renderersValue.Render();
+            }
+            
+            public void Dispose()
+            {
+                foreach (var renderersValue in renderers.Values)
+                    renderersValue.Dispose();
+                renderers.Clear();
+            }
+
+            public void Reset(List<Texture2D> alphaMaps)
+            {
+                foreach (var v in renderers)
+                {
+                    var profile = v.Key;
+                    var renderer = v.Value;
+                    renderer.Reset(alphaMaps, profile);
+                }
+            }
+        }
+
         [SerializeField] private Terrain targetTerrain = default;
         [SerializeField] private List<Texture2D> alphaMaps = default;
 
-        private Dictionary<Camera, MassiveGrassRenderer> renderers = new Dictionary<Camera, MassiveGrassRenderer>();
+        private Dictionary<Camera, Renderers> renderers = new Dictionary<Camera, Renderers>();
 
         private MeshFilter meshFilter;
         private MeshFilter MeshFilter => meshFilter ? meshFilter : (meshFilter = GetComponent<MeshFilter>());
         private Mesh boundsMesh;
-        
-        public MassiveGrassProfile profile;
+
+        public List<MassiveGrassProfile> profiles;
 
         // Terrain と同じ大きさの Bounds をセットして
         // Terrain が描画されるときに強制的に描画処理を走らせるようにする
@@ -37,6 +82,7 @@ namespace Mewlist.MassiveGrass
                 boundsMesh = new Mesh();
                 boundsMesh.name = "Massive Grass Terrain Bounds";
             }
+
             boundsMesh.bounds = targetTerrain.terrainData.bounds;
             MeshFilter.sharedMesh = boundsMesh;
         }
@@ -49,6 +95,7 @@ namespace Mewlist.MassiveGrass
                 else                       DestroyImmediate(boundsMesh);
                 boundsMesh = null;
             }
+
             MeshFilter.sharedMesh = null;
         }
 
@@ -68,6 +115,7 @@ namespace Mewlist.MassiveGrass
         {
             foreach (var massiveGrassRenderer in renderers.Values)
                 massiveGrassRenderer.Dispose();
+
             renderers.Clear();
             DestroyBounds();
         }
@@ -85,6 +133,7 @@ namespace Mewlist.MassiveGrass
 
         private bool baking = false;
         private bool reserveBaking = false;
+
         public void Bake()
         {
             if (baking)
@@ -99,6 +148,7 @@ namespace Mewlist.MassiveGrass
             {
                 DestroyImmediate(texture2D);
             }
+
             alphaMaps.Clear();
 
             // Bake
@@ -109,9 +159,10 @@ namespace Mewlist.MassiveGrass
 
             for (var i = 0; i < layers; i++)
             {
-                var texture = AlphamapBaker.CreateAndBake(targetTerrain, new []{i});
+                var texture = AlphamapBaker.CreateAndBake(targetTerrain, new [] {i});
                 alphaMaps.Add(texture);
             }
+
             baking = false;
             Debug.Log("Baking Done");
             if (reserveBaking)
@@ -124,9 +175,10 @@ namespace Mewlist.MassiveGrass
         public async void BakeAndRefreshAsync()
         {
             var context = SynchronizationContext.Current;
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
                 context.Post(_ => Bake(), null);
+                while (baking) await Task.Delay(1);
                 context.Post(_ => Refresh(), null);
             });
         }
@@ -135,7 +187,7 @@ namespace Mewlist.MassiveGrass
         {
             Debug.Log("Refresh");
             foreach (var massiveGrassRenderer in renderers.Values)
-                massiveGrassRenderer.Reset(alphaMaps, profile);
+                massiveGrassRenderer.Reset(alphaMaps);
             SetupBounds();
             Render();
         }
@@ -148,18 +200,16 @@ namespace Mewlist.MassiveGrass
         private void OnBeginRender(Camera camera)
         {
             if (camera == null) return;
-            if (profile == null) return;
+            if (!profiles.Any()) return;
 
             // カメラ毎に Renderer を作る
             if (!renderers.ContainsKey(camera))
+                renderers[camera] = new Renderers();
+            
+            foreach (var profile in profiles)
             {
-                renderers[camera] = new MassiveGrassRenderer(camera, targetTerrain, alphaMaps, profile);
-                Debug.Log(camera + " renderer created");
-            }
-
-            foreach (var massiveGrassRenderer in renderers.Values)
-            {
-                massiveGrassRenderer.OnBeginRender();
+                if (profile != null)
+                    renderers[camera].OnBeginRender(camera, profile, targetTerrain, alphaMaps);
             }
         }
 
@@ -172,17 +222,28 @@ namespace Mewlist.MassiveGrass
             MassiveGrassGizmo.DrawBounds(targetTerrain.transform.position, boundsMesh.bounds);
 
             renderers.TryGetValue(Camera.current, out var grassRenderer);
+            var count = renderers[Camera.current].renderers.Count;
+            var colors = Enumerable
+                .Range(0, count)
+                .Select(v => new Color((float)v / count, 1, 1 - (float)v / count))
+                .ToList();
             if (grassRenderer != null)
             {
-                // grid
-                foreach (var gridActiveRect in renderers[Camera.current].Grid.ActiveRects)
+                int i = 0;
+                foreach (var v in renderers[Camera.current].renderers.Values)
                 {
-                    Gizmos.color = Color.green;
-                    var localPos = gridActiveRect.center - new Vector2(targetTerrain.transform.position.x, targetTerrain.transform.position.z);
-                    localPos /= targetTerrain.terrainData.bounds.size.x;
-                    var height = targetTerrain.terrainData.GetInterpolatedHeight(localPos.x, localPos.y);
-                    MassiveGrassGizmo.DrawRect(gridActiveRect, height);
+                    Gizmos.color = colors[i++];
+                    // grid
+                    foreach (var gridActiveRect in v.Grid.ActiveRects)
+                    {
+                        var localPos = gridActiveRect.center - new Vector2(targetTerrain.transform.position.x,
+                                           targetTerrain.transform.position.z);
+                        localPos /= targetTerrain.terrainData.bounds.size.x;
+                        var height = targetTerrain.terrainData.GetInterpolatedHeight(localPos.x, localPos.y);
+                        MassiveGrassGizmo.DrawRect(gridActiveRect, height);
+                    }
                 }
+
             }
         }
 #endif

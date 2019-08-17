@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c5c793b0f7de44a2f9666b4eb984b066, type: 3}
-  m_Name: SampleGrassProfile
+  m_Name: SampleGrassProfile 2
   m_EditorClassIdentifier: 
   PaintTextureIndex: 02000000
-  Scale: {x: 3, y: 1.5}
-  Radius: 400
-  GridSize: 25
+  Scale: {x: 2, y: 3}
+  Radius: 100
+  GridSize: 16
   Slant: 0.15
-  AmountPerBlock: 1500
-  Material: {fileID: 2100000, guid: 470b29f8e72d20f41ae6d3b55795790d, type: 2}
+  AmountPerBlock: 50
+  Material: {fileID: 2100000, guid: 8d6c88e4ce0b92e4b80c006f021fed58, type: 2}
   Layer: 0
   AlphaMapThreshold: 0.5
   CastShadows: 0
