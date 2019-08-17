@@ -1,5 +1,7 @@
 # MassiveGrass
 
+![Sample Image](https://github.com/mewlist/MassiveGrass/blob/master/MassiveGrassImage.png?raw=true)
+
 Terrain の地形に沿って大量の草を生やします。
 
 Unity2018.4 以降に対応
