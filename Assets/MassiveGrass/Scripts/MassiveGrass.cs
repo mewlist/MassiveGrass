@@ -22,11 +22,12 @@ namespace Mewlist.MassiveGrass
                 Camera camera,
                 MassiveGrassProfile profile,
                 Terrain terrain,
-                List<Texture2D> alphaMaps)
+                List<Texture2D> alphaMaps,
+                int maxParallelJobCount)
             {
                 if (!renderers.ContainsKey(profile))
                 {
-                    renderers[profile] = new MassiveGrassRenderer(camera, terrain, alphaMaps, profile);
+                    renderers[profile] = new MassiveGrassRenderer(camera, terrain, alphaMaps, profile, maxParallelJobCount);
                     Debug.Log($" renderer for {profile} created on {camera}");
                 }
                 renderers[profile].OnBeginRender();
@@ -58,6 +59,7 @@ namespace Mewlist.MassiveGrass
 
         [SerializeField] private Terrain targetTerrain = default;
         [SerializeField] private List<Texture2D> alphaMaps = default;
+        [SerializeField, Range(1, 200)] private int maxParallelJobCount = 50;
 
         private Dictionary<Camera, Renderers> renderers = new Dictionary<Camera, Renderers>();
 
@@ -192,6 +194,17 @@ namespace Mewlist.MassiveGrass
             Render();
         }
 
+        private void OnValidate()
+        {
+            foreach (var massiveGrassRenderer in renderers.Values)
+            {
+                foreach (var renderer in massiveGrassRenderer.renderers.Values)
+                {
+                    renderer.MaxParallelJobCount = maxParallelJobCount;
+                }
+            }
+        }
+
         private void OnWillRenderObject()
         {
             OnBeginRender(Camera.current);
@@ -209,7 +222,7 @@ namespace Mewlist.MassiveGrass
             foreach (var profile in profiles)
             {
                 if (profile != null)
-                    renderers[camera].OnBeginRender(camera, profile, targetTerrain, alphaMaps);
+                    renderers[camera].OnBeginRender(camera, profile, targetTerrain, alphaMaps, maxParallelJobCount);
             }
         }
 

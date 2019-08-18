@@ -8,13 +8,22 @@ namespace Mewlist.MassiveGrass
 {
     public class MassiveGrassRenderer : IDisposable, ICellOperationCallbacks
     {
-        private const int MaxParallelJobCount = 100;
+        private int              maxParallelJobCount;
         private Camera           camera;
         private Terrain          terrain;
         private List<Texture2D>  alphaMaps;
         private MassiveGrassGrid grid;
 
         public MassiveGrassGrid Grid => grid;
+
+        public int MaxParallelJobCount
+        {
+            get { return maxParallelJobCount; }
+            set
+            {
+                maxParallelJobCount = Mathf.Max(1, value);
+            }
+        }
 
         private Dictionary<MassiveGrassGrid.CellIndex, Mesh> meshes
             = new Dictionary<MassiveGrassGrid.CellIndex, Mesh>();
@@ -40,13 +49,18 @@ namespace Mewlist.MassiveGrass
         private Dictionary<MassiveGrassGrid.CellIndex, Request> requestQueue =
             new Dictionary<MassiveGrassGrid.CellIndex, Request>();
 
-        public MassiveGrassRenderer(Camera camera, Terrain terrain, List<Texture2D> alphaMaps,
-            MassiveGrassProfile profile)
+        public MassiveGrassRenderer(
+            Camera camera,
+            Terrain terrain,
+            List<Texture2D> alphaMaps,
+            MassiveGrassProfile profile,
+            int maxParallelJobCount)
         {
             this.camera    = camera;
             this.terrain   = terrain;
             this.profile   = profile;
             this.alphaMaps = alphaMaps;
+            MaxParallelJobCount = maxParallelJobCount;
 
             var terrainSize = terrain.terrainData.bounds.size.x;
             grid        = new MassiveGrassGrid(terrain, Mathf.CeilToInt(terrainSize / profile.GridSize));
