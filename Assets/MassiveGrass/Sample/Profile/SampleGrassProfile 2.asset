@@ -15,9 +15,9 @@ MonoBehaviour:
   PaintTextureIndex: 02000000
   Scale: {x: 2, y: 3}
   Radius: 100
-  GridSize: 16
+  GridSize: 20
   Slant: 0.15
-  AmountPerBlock: 50
+  AmountPerBlock: 80
   Material: {fileID: 2100000, guid: 8d6c88e4ce0b92e4b80c006f021fed58, type: 2}
   Layer: 0
   AlphaMapThreshold: 0.5
