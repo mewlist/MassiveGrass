@@ -4,7 +4,7 @@ using UnityEditor;
 namespace Mewlist.MassiveGrass
 {
     [CustomEditor(typeof(MassiveGrass))]
-    public class MassiveGrassControllerEditor : Editor
+    public class MassiveGrassEditor : Editor
     {
         public override void OnInspectorGUI()
         {

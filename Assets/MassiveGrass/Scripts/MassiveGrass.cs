@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 
@@ -11,63 +9,22 @@ namespace Mewlist.MassiveGrass
     [RequireComponent(typeof(MeshRenderer))]
     [RequireComponent(typeof(MeshFilter))]
     [ExecuteInEditMode]
-    public class MassiveGrass : MonoBehaviour
+    public partial class MassiveGrass : MonoBehaviour
     {
-        private class Renderers : IDisposable
-        {
-            public Dictionary<MassiveGrassProfile, MassiveGrassRenderer> renderers =
-                new Dictionary<MassiveGrassProfile, MassiveGrassRenderer>();
+        [SerializeField] private Terrain                   targetTerrain       = default;
+        [SerializeField] private List<Texture2D>           bakedAlphaMaps      = default;
+        [Range(1, 200)] [SerializeField] private int                       maxParallelJobCount = 50;
+        [SerializeField] private List<MassiveGrassProfile> profiles            = default(List<MassiveGrassProfile>);
 
-            public void OnBeginRender(
-                Camera camera,
-                MassiveGrassProfile profile,
-                Terrain terrain,
-                List<Texture2D> alphaMaps,
-                int maxParallelJobCount)
-            {
-                if (!renderers.ContainsKey(profile))
-                {
-                    renderers[profile] = new MassiveGrassRenderer(camera, terrain, alphaMaps, profile, maxParallelJobCount);
-                    Debug.Log($" renderer for {profile} created on {camera}");
-                }
-                renderers[profile].OnBeginRender();
-            }
-
-            public void Render()
-            {
-                foreach (var renderersValue in renderers.Values)
-                    renderersValue.Render();
-            }
-            
-            public void Dispose()
-            {
-                foreach (var renderersValue in renderers.Values)
-                    renderersValue.Dispose();
-                renderers.Clear();
-            }
-
-            public void Reset(List<Texture2D> alphaMaps)
-            {
-                foreach (var v in renderers)
-                {
-                    var profile = v.Key;
-                    var renderer = v.Value;
-                    renderer.Reset(alphaMaps, profile);
-                }
-            }
-        }
-
-        [SerializeField] private Terrain targetTerrain = default;
-        [SerializeField] private List<Texture2D> alphaMaps = default;
-        [SerializeField, Range(1, 200)] private int maxParallelJobCount = 50;
-
-        private Dictionary<Camera, Renderers> renderers = new Dictionary<Camera, Renderers>();
+        private readonly Dictionary<Camera, RendererCollection>
+            rendererCollections = new Dictionary<Camera, RendererCollection>();
 
         private MeshFilter meshFilter;
-        private MeshFilter MeshFilter => meshFilter ? meshFilter : (meshFilter = GetComponent<MeshFilter>());
-        private Mesh boundsMesh;
+        private Mesh       boundsMesh;
 
-        public List<MassiveGrassProfile> profiles;
+
+        private MeshFilter MeshFilter => meshFilter ? meshFilter : (meshFilter = GetComponent<MeshFilter>());
+
 
         // Terrain と同じ大きさの Bounds をセットして
         // Terrain が描画されるときに強制的に描画処理を走らせるようにする
@@ -104,21 +61,21 @@ namespace Mewlist.MassiveGrass
         private void OnEnable()
         {
             SetupBounds();
-            RenderPipeline.beginCameraRendering += OnBeginRender;
+            RenderPipeline.beginCameraRendering += OnBeginRender; // for SRP
         }
 
         private void OnDisable()
         {
-            RenderPipeline.beginCameraRendering -= OnBeginRender;
+            RenderPipeline.beginCameraRendering -= OnBeginRender; // for SRP
             Clear();
         }
 
         private void Clear()
         {
-            foreach (var massiveGrassRenderer in renderers.Values)
+            foreach (var massiveGrassRenderer in rendererCollections.Values)
                 massiveGrassRenderer.Dispose();
 
-            renderers.Clear();
+            rendererCollections.Clear();
             DestroyBounds();
         }
 
@@ -129,74 +86,13 @@ namespace Mewlist.MassiveGrass
 
         private void Render()
         {
-            foreach (var massiveGrassRenderer in renderers.Values)
+            foreach (var massiveGrassRenderer in rendererCollections.Values)
                 massiveGrassRenderer.Render();
-        }
-
-        private bool baking = false;
-        private bool reserveBaking = false;
-
-        public void Bake()
-        {
-            if (baking)
-            {
-                reserveBaking = true;
-                return;
-            }
-
-            Debug.Log("Baking");
-            baking = true;
-            foreach (var texture2D in alphaMaps)
-            {
-                DestroyImmediate(texture2D);
-            }
-
-            alphaMaps.Clear();
-
-            // Bake
-            var terrainData = targetTerrain.terrainData;
-            var w           = terrainData.alphamapWidth;
-            var h           = terrainData.alphamapHeight;
-            var layers      = terrainData.alphamapLayers;
-
-            for (var i = 0; i < layers; i++)
-            {
-                var texture = AlphamapBaker.CreateAndBake(targetTerrain, new [] {i});
-                alphaMaps.Add(texture);
-            }
-
-            baking = false;
-            Debug.Log("Baking Done");
-            if (reserveBaking)
-            {
-                reserveBaking = false;
-                Bake();
-            }
-        }
-
-        public async void BakeAndRefreshAsync()
-        {
-            var context = SynchronizationContext.Current;
-            await Task.Run(async () =>
-            {
-                context.Post(_ => Bake(), null);
-                while (baking) await Task.Delay(1);
-                context.Post(_ => Refresh(), null);
-            });
-        }
-
-        public async void Refresh()
-        {
-            Debug.Log("Refresh");
-            foreach (var massiveGrassRenderer in renderers.Values)
-                massiveGrassRenderer.Reset(alphaMaps);
-            SetupBounds();
-            Render();
         }
 
         private void OnValidate()
         {
-            foreach (var massiveGrassRenderer in renderers.Values)
+            foreach (var massiveGrassRenderer in rendererCollections.Values)
             {
                 foreach (var renderer in massiveGrassRenderer.renderers.Values)
                 {
@@ -216,49 +112,60 @@ namespace Mewlist.MassiveGrass
             if (!profiles.Any()) return;
 
             // カメラ毎に Renderer を作る
-            if (!renderers.ContainsKey(camera))
-                renderers[camera] = new Renderers();
-            
+            if (!rendererCollections.ContainsKey(camera))
+                rendererCollections[camera] = new RendererCollection();
+
             foreach (var profile in profiles)
-            {
-                if (profile != null)
-                    renderers[camera].OnBeginRender(camera, profile, targetTerrain, alphaMaps, maxParallelJobCount);
-            }
+                rendererCollections[camera]
+                    .OnBeginRender(camera, profile, targetTerrain, bakedAlphaMaps, maxParallelJobCount);
         }
 
-#if UNITY_EDITOR
-        private void OnDrawGizmosSelected()
-        {
-            if (!isActiveAndEnabled) return;
-            // bounds
-            Gizmos.color = Color.black;
-            MassiveGrassGizmo.DrawBounds(targetTerrain.transform.position, boundsMesh.bounds);
 
-            renderers.TryGetValue(Camera.current, out var grassRenderer);
-            var count = renderers[Camera.current].renderers.Count;
-            var colors = Enumerable
-                .Range(0, count)
-                .Select(v => new Color((float)v / count, 1, 1 - (float)v / count))
-                .ToList();
-            if (grassRenderer != null)
+        private class RendererCollection : IDisposable
+        {
+            public Dictionary<MassiveGrassProfile, MassiveGrassRenderer> renderers =
+                new Dictionary<MassiveGrassProfile, MassiveGrassRenderer>();
+
+            public void OnBeginRender(
+                Camera              camera,
+                MassiveGrassProfile profile,
+                Terrain             terrain,
+                List<Texture2D>     alphaMaps,
+                int                 maxParallelJobCount)
             {
-                int i = 0;
-                foreach (var v in renderers[Camera.current].renderers.Values)
+                if (profile == null) return;
+                if (!renderers.ContainsKey(profile))
                 {
-                    Gizmos.color = colors[i++];
-                    // grid
-                    foreach (var gridActiveRect in v.Grid.ActiveRects)
-                    {
-                        var localPos = gridActiveRect.center - new Vector2(targetTerrain.transform.position.x,
-                                           targetTerrain.transform.position.z);
-                        localPos /= targetTerrain.terrainData.bounds.size.x;
-                        var height = targetTerrain.terrainData.GetInterpolatedHeight(localPos.x, localPos.y);
-                        MassiveGrassGizmo.DrawRect(gridActiveRect, height);
-                    }
+                    renderers[profile] = new MassiveGrassRenderer(
+                        camera,
+                        terrain,
+                        alphaMaps,
+                        profile,
+                        maxParallelJobCount);
+                    Debug.Log($" renderer for {profile} created on {camera}");
                 }
 
+                renderers[profile].OnBeginRender();
+            }
+
+            public void Render()
+            {
+                foreach (var v in renderers.Values)
+                    v.Render();
+            }
+
+            public void Dispose()
+            {
+                foreach (var v in renderers.Values)
+                    v.Dispose();
+                renderers.Clear();
+            }
+
+            public void UpdateAlphaMaps(List<Texture2D> alphaMaps)
+            {
+                foreach (var v in renderers.Values)
+                    v.UpdateAlphaMaps(alphaMaps);
             }
         }
-#endif
     }
 }
