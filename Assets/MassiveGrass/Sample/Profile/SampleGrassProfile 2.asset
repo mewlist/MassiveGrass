@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: SampleGrassProfile 2
   m_EditorClassIdentifier: 
   PaintTextureIndex: 02000000
-  Scale: {x: 2, y: 3}
+  Scale: {x: 1, y: 2.5}
   Radius: 100
   GridSize: 20
   Slant: 0.15
@@ -22,3 +22,5 @@ MonoBehaviour:
   Layer: 0
   AlphaMapThreshold: 0.5
   CastShadows: 0
+  BuilderType: 0
+  Mesh: {fileID: 4300000, guid: 38695b293c9425242ad10debf1b82439, type: 3}

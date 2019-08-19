@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Mewlist.MassiveGrass.Strategy
+namespace Mewlist.MassiveGrass
 {
     /// <summary>
     /// Quad のプリミティブを生成する
@@ -75,7 +75,8 @@ namespace Mewlist.MassiveGrass.Strategy
             var p2 = rot * new Vector3( 0.5f * scale.x, 1f * scale.y, 0f);
             var p3 = rot * new Vector3( 0.5f * scale.x, 0f,           0f);
             var p4 = rot * new Vector3(-0.5f * scale.x, 0f,           0f);
-            var normal = element.normal;
+//            var normal = element.normal;
+            var normal = rot * Vector3.up;
             var color = Color.Lerp(Color.white, Color.yellow, rand);
             meshData.vertices[vOrigin+0] = element.position + p1;
             meshData.vertices[vOrigin+1] = element.position + p2;
@@ -83,8 +84,8 @@ namespace Mewlist.MassiveGrass.Strategy
             meshData.vertices[vOrigin+3] = element.position + p4;
             meshData.normals[vOrigin+0] = normal * 1f;
             meshData.normals[vOrigin+1] = normal * 1f;
-            meshData.normals[vOrigin+2] = normal * 0.5f;
-            meshData.normals[vOrigin+3] = normal * 0.5f;
+            meshData.normals[vOrigin+2] = normal * 1f;
+            meshData.normals[vOrigin+3] = normal * 1f;
             meshData.uvs[vOrigin+0] = new Vector4(0f, 1f, 0f, 0f);
             meshData.uvs[vOrigin+1] = new Vector4(1f, 1f, 0f, 0f);
             meshData.uvs[vOrigin+2] = new Vector4(1f, 0f, 0f, 0f);

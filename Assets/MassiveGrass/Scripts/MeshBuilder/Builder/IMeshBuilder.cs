@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Mewlist.MassiveGrass.Strategy
+namespace Mewlist.MassiveGrass
 {
     public interface IMeshBuilder
     {

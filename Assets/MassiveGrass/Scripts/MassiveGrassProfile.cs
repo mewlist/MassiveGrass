@@ -1,11 +1,16 @@
 using System;
-using Mewlist.MassiveGrass.Strategy;
 using UnityEngine;
 
 namespace Mewlist.MassiveGrass
 {
     public class LayerAttribute : PropertyAttribute { }
 
+    public enum BuilderType
+    {
+        Quad = 0,
+        Mesh = 10,
+    }
+    
     [CreateAssetMenu(fileName = "MkassiveGrass", menuName = "MassiveGrass", order = 1)]
     public class MassiveGrassProfile : ScriptableObject
     {
@@ -19,10 +24,20 @@ namespace Mewlist.MassiveGrass
         [SerializeField, Layer] public int      Layer = 0;
         [SerializeField]        public float    AlphaMapThreshold = 0.3f;
         [SerializeField]        public bool     CastShadows = false;
+        [SerializeField]        public BuilderType BuilderType;
+        [SerializeField]        public Mesh     Mesh;
 
         public IMeshBuilder CreateBuilder()
         {
-            return new QuadBuilder();
+            switch(BuilderType)
+            {
+                case BuilderType.Quad:
+                    return new QuadBuilder();
+                case BuilderType.Mesh:
+                    return new CombinedMeshBuilder();
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
     }
 }
