@@ -10,19 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c5c793b0f7de44a2f9666b4eb984b066, type: 3}
-  m_Name: SampleGrassProfile 2
+  m_Name: SampleGrassProfile 4
   m_EditorClassIdentifier: 
-  PaintTextureIndex: 02000000
-  Scale: {x: 2, y: 3}
-  Radius: 100
-  GridSize: 15
-  Slant: 0.3
-  GroundOffset: 0
-  AmountPerBlock: 100
-  Material: {fileID: 2100000, guid: 8d6c88e4ce0b92e4b80c006f021fed58, type: 2}
+  PaintTextureIndex: 00000000
+  Scale: {x: 2, y: 2}
+  Radius: 50
+  GridSize: 25
+  Slant: 0.1
+  GroundOffset: 2
+  AmountPerBlock: 5
+  Material: {fileID: 2100000, guid: 7f89078f9a20d1045af5d2b49cd2bc2f, type: 2}
   Layer: 0
-  AlphaMapThreshold: 0.5
-  CastShadows: 0
-  BuilderType: 0
-  Mesh: {fileID: 0}
+  AlphaMapThreshold: 0.1
+  CastShadows: 1
+  BuilderType: 10
+  Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
   NormalType: 0

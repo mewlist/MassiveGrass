@@ -13,10 +13,11 @@ MonoBehaviour:
   m_Name: SampleGrassProfile 3
   m_EditorClassIdentifier: 
   PaintTextureIndex: 02000000
-  Scale: {x: 2, y: 2}
-  Radius: 80
-  GridSize: 15
-  Slant: 0.3
+  Scale: {x: 0.5, y: 1.8}
+  Radius: 40
+  GridSize: 10
+  Slant: 0.4
+  GroundOffset: 0
   AmountPerBlock: 10
   Material: {fileID: 2100000, guid: f4fcc4dec1a005440ad903c7d446f750, type: 2}
   Layer: 0
@@ -24,3 +25,4 @@ MonoBehaviour:
   CastShadows: 0
   BuilderType: 0
   Mesh: {fileID: 4300000, guid: 38695b293c9425242ad10debf1b82439, type: 3}
+  NormalType: 0
