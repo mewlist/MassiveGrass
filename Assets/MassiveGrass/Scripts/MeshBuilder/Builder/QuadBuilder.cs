@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -71,21 +72,35 @@ namespace Mewlist.MassiveGrass
                                    upRot *
                                    slant;
             var scale = profile.Scale;
-            var p1 = rot * new Vector3(-0.5f * scale.x, 1f * scale.y, 0f);
-            var p2 = rot * new Vector3( 0.5f * scale.x, 1f * scale.y, 0f);
-            var p3 = rot * new Vector3( 0.5f * scale.x, 0f,           0f);
-            var p4 = rot * new Vector3(-0.5f * scale.x, 0f,           0f);
-//            var normal = element.normal;
-            var normal = rot * Vector3.up;
+            var p1 = rot * new Vector3(-0.5f * scale.x, 1f * scale.y, 0f) + Vector3.up * profile.GroundOffset;
+            var p2 = rot * new Vector3( 0.5f * scale.x, 1f * scale.y, 0f) + Vector3.up * profile.GroundOffset;
+            var p3 = rot * new Vector3( 0.5f * scale.x, 0f,           0f) + Vector3.up * profile.GroundOffset;
+            var p4 = rot * new Vector3(-0.5f * scale.x, 0f,           0f) + Vector3.up * profile.GroundOffset;
+            var normal = element.normal;
+            var normalBottom = element.normal;
+            switch(profile.NormalType)
+            {
+                case NormalType.KeepMesh:
+                    break;
+                case NormalType.Up:
+                    normalBottom = normal = rot * Vector3.up;
+                    break;
+                case NormalType.Shading:
+                    normal = rot * Vector3.up;
+                    normalBottom = rot * Vector3.forward;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
             var color = Color.Lerp(Color.white, Color.yellow, rand);
             meshData.vertices[vOrigin+0] = element.position + p1;
             meshData.vertices[vOrigin+1] = element.position + p2;
             meshData.vertices[vOrigin+2] = element.position + p3;
             meshData.vertices[vOrigin+3] = element.position + p4;
-            meshData.normals[vOrigin+0] = normal * 1f;
-            meshData.normals[vOrigin+1] = normal * 1f;
-            meshData.normals[vOrigin+2] = normal * 1f;
-            meshData.normals[vOrigin+3] = normal * 1f;
+            meshData.normals[vOrigin+0] = normal;
+            meshData.normals[vOrigin+1] = normal;
+            meshData.normals[vOrigin+2] = normalBottom;
+            meshData.normals[vOrigin+3] = normalBottom;
             meshData.uvs[vOrigin+0] = new Vector4(0f, 1f, 0f, 0f);
             meshData.uvs[vOrigin+1] = new Vector4(1f, 1f, 0f, 0f);
             meshData.uvs[vOrigin+2] = new Vector4(1f, 0f, 0f, 0f);

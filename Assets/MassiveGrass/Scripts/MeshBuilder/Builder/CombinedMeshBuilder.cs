@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -37,9 +38,23 @@ namespace Mewlist.MassiveGrass
             if (cache == null)
             {
                 cache = Mesh.Instantiate(profile.Mesh);
-                cache.normals = cache.normals.Select(_ => Vector3.up).ToArray();
+                switch(profile.NormalType)
+                {
+                    case NormalType.KeepMesh:
+                        break;
+                    case NormalType.Up:
+                        cache.normals = cache.normals.Select(_ => Vector3.up).ToArray();
+                        break;
+                    case NormalType.Shading:
+                        cache.normals = cache.normals.Select((_, i) =>
+                            Vector3.Lerp(Vector3.forward, Vector3.up, cache.vertices[i].y)).ToArray();
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
             }
 
+            var scale = new Vector3(profile.Scale.x, profile.Scale.y, profile.Scale.x);
             for (var i = 0; i < elements.Count; i++)
             {
                 var element  = elements[i];
@@ -55,12 +70,15 @@ namespace Mewlist.MassiveGrass
                                            slant;
                     var instance = new CombineInstance();
                     instance.mesh = cache;
-                    instance.transform = Matrix4x4.TRS(element.position, rot, Vector3.one);
+                    instance.transform = Matrix4x4.TRS(
+                        element.position + Vector3.up * profile.GroundOffset,
+                        rot,
+                        scale);
                     combine.Add(instance);
                 }
             }
             mesh.CombineMeshes(combine.ToArray());
-            Debug.Log(mesh.subMeshCount);
+            Debug.Log(mesh.subMeshCount + " " + elements.Count);
             return mesh;
         }
     }
