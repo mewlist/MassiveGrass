@@ -47,7 +47,7 @@ namespace Mewlist.MassiveGrass
                         break;
                     case NormalType.Shading:
                         cache.normals = cache.normals.Select((_, i) =>
-                            Vector3.Lerp(Vector3.forward, Vector3.up, cache.vertices[i].y)).ToArray();
+                            Vector3.Slerp(cache.normals[i], Vector3.up, cache.vertices[i].y)).ToArray();
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
