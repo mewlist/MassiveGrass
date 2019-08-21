@@ -78,7 +78,6 @@ namespace Mewlist.MassiveGrass
                 }
             }
             mesh.CombineMeshes(combine.ToArray());
-            Debug.Log(mesh.subMeshCount + " " + elements.Count);
             return mesh;
         }
     }
