@@ -45,7 +45,7 @@ namespace Mewlist.MassiveGrass
                 {
                     var element  = elements[i];
                     if (alphas[i] >= profile.AlphaMapThreshold)
-                        AddQuad(meshData, profile, element, actualCount++);
+                        AddQuad(meshData, profile, element, alphas[i], actualCount++);
                 }
             });
 
@@ -58,7 +58,7 @@ namespace Mewlist.MassiveGrass
             return mesh;
         }
         
-        private void AddQuad(MeshData meshData, MassiveGrassProfile profile, Element element, int index)
+        private void AddQuad(MeshData meshData, MassiveGrassProfile profile, Element element, float density, int index)
         {
             var vOrigin = index * 4;
             var iOrigin = index * 6;
@@ -92,7 +92,13 @@ namespace Mewlist.MassiveGrass
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            var color = Color.Lerp(Color.white, Color.yellow, rand);
+            var vColorR = profile.GetCustomVertexData(VertexDataType.VertexColorR, density, rand);
+            var vColorG = profile.GetCustomVertexData(VertexDataType.VertexColorG, density, rand);
+            var vColorB = profile.GetCustomVertexData(VertexDataType.VertexColorB, density, rand);
+            var vColorA = profile.GetCustomVertexData(VertexDataType.VertexColorA, density, rand);
+            var uv1Z    = profile.GetCustomVertexData(VertexDataType.UV1Z, density, rand);
+            var uv1W    = profile.GetCustomVertexData(VertexDataType.UV1W, density, rand);
+            var color = new Color(vColorR, vColorG, vColorB, vColorA);
             meshData.vertices[vOrigin+0] = element.position + p1;
             meshData.vertices[vOrigin+1] = element.position + p2;
             meshData.vertices[vOrigin+2] = element.position + p3;
@@ -101,10 +107,10 @@ namespace Mewlist.MassiveGrass
             meshData.normals[vOrigin+1] = normal;
             meshData.normals[vOrigin+2] = normalBottom;
             meshData.normals[vOrigin+3] = normalBottom;
-            meshData.uvs[vOrigin+0] = new Vector4(0f, 1f, 0f, 0f);
-            meshData.uvs[vOrigin+1] = new Vector4(1f, 1f, 0f, 0f);
-            meshData.uvs[vOrigin+2] = new Vector4(1f, 0f, 0f, 0f);
-            meshData.uvs[vOrigin+3] = new Vector4(0f, 0f, 0f, 0f);
+            meshData.uvs[vOrigin+0] = new Vector4(0f, 1f, uv1Z, uv1W);
+            meshData.uvs[vOrigin+1] = new Vector4(1f, 1f, uv1Z, uv1W);
+            meshData.uvs[vOrigin+2] = new Vector4(1f, 0f, uv1Z, uv1W);
+            meshData.uvs[vOrigin+3] = new Vector4(0f, 0f, uv1Z, uv1W);
             meshData.colors[vOrigin+0] = color;
             meshData.colors[vOrigin+1] = color;
             meshData.colors[vOrigin+2] = color;
@@ -115,6 +121,7 @@ namespace Mewlist.MassiveGrass
             meshData.triangles[iOrigin+3] = vOrigin+2;
             meshData.triangles[iOrigin+4] = vOrigin+3;
             meshData.triangles[iOrigin+5] = vOrigin+0;
+            
         }
     }
 }

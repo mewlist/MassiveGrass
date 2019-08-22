@@ -60,7 +60,16 @@ namespace Mewlist.MassiveGrass
                 var element  = elements[i];
                 if (alphas[i] >= profile.AlphaMapThreshold)
                 {
+                    var density = alphas[i];
                     var rand    = ParkAndMiller.Get(element.index);
+                    var vColorR = profile.GetCustomVertexData(VertexDataType.VertexColorR, density, rand);
+                    var vColorG = profile.GetCustomVertexData(VertexDataType.VertexColorG, density, rand);
+                    var vColorB = profile.GetCustomVertexData(VertexDataType.VertexColorB, density, rand);
+                    var vColorA = profile.GetCustomVertexData(VertexDataType.VertexColorA, density, rand);
+                    var uv1Z    = profile.GetCustomVertexData(VertexDataType.UV1Z, density, rand);
+                    var uv1W    = profile.GetCustomVertexData(VertexDataType.UV1W, density, rand);
+                    var color = new Color(vColorR, vColorG, vColorB, vColorA);
+
                     Quaternion normalRot = Quaternion.LookRotation(element.normal); 
                     Quaternion slant     = Quaternion.AngleAxis(profile.Slant * 90f * (rand - 0.5f), Vector3.right);
                     Quaternion upRot     = Quaternion.AngleAxis(360f * rand, Vector3.up);
@@ -69,7 +78,11 @@ namespace Mewlist.MassiveGrass
                                            upRot *
                                            slant;
                     var instance = new CombineInstance();
-                    instance.mesh = cache;
+                    instance.mesh = Mesh.Instantiate(cache);
+                    instance.mesh.colors = instance.mesh.colors.Select(_ => color).ToArray();
+                    var uvs = new List<Vector4>();
+                    instance.mesh.GetUVs(0, uvs);
+                    instance.mesh.SetUVs(0, uvs.Select(v => new Vector4(v.x, v.y, uv1Z, uv1W)).ToList());
                     instance.transform = Matrix4x4.TRS(
                         element.position + Vector3.up * profile.GroundOffset,
                         rot,

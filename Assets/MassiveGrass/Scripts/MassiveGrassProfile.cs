@@ -17,6 +17,32 @@ namespace Mewlist.MassiveGrass
         Up = 1,
         Shading = 2,
     }
+
+    public enum VertexDataType
+    {
+        VertexColorR,
+        VertexColorG,
+        VertexColorB,
+        VertexColorA,
+        UV1Z,
+        UV1W,
+    }
+
+    public enum OutDataType
+    {
+        Density,
+        Range,
+        Random,
+        CustomData1,
+        CustomData2,
+    }
+
+    [Serializable]
+    public struct CustomVertexData
+    {
+        public VertexDataType VertexDataType;
+        public OutDataType    OutDataType;
+    }
     
     [CreateAssetMenu(fileName = "MkassiveGrass", menuName = "MassiveGrass", order = 1)]
     public class MassiveGrassProfile : ScriptableObject
@@ -35,6 +61,7 @@ namespace Mewlist.MassiveGrass
         [SerializeField]        public BuilderType BuilderType;
         [SerializeField]        public Mesh        Mesh;
         [SerializeField]        public NormalType  NormalType = NormalType.Up;
+        [SerializeField]        public CustomVertexData[] VertexDataDefinitions;
         public IMeshBuilder CreateBuilder()
         {
             switch(BuilderType)
@@ -45,6 +72,33 @@ namespace Mewlist.MassiveGrass
                     return new CombinedMeshBuilder();
                 default:
                     throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public float GetCustomVertexData(VertexDataType vertexDataType, float density, float rand)
+        {
+            foreach (var v in VertexDataDefinitions)
+            {
+                if (vertexDataType == v.VertexDataType)
+                    return GetData(v.OutDataType, density, rand);
+            }
+            return 0f;
+        }
+
+        private float GetData(OutDataType outDataType, float density, float rand)
+        {
+            switch(outDataType)
+            {
+                case OutDataType.Density:
+                    return density;
+                case OutDataType.Range:
+                    return Radius;
+                case OutDataType.Random:
+                    return rand;
+                case OutDataType.CustomData1:
+                case OutDataType.CustomData2:
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(outDataType), outDataType, null);
             }
         }
     }

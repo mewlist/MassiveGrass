@@ -16,7 +16,7 @@
 
         CGPROGRAM
         // Physically based Standard lighting model, and enable shadows on all light types
-        #pragma surface surf Standard addshadow
+        #pragma surface surf Standard addshadow vertex:vert
 
         // Use shader model 3.0 target, to get nicer looking lighting
         #pragma target 3.0
@@ -26,6 +26,9 @@
         struct Input
         {
             float2 uv_MainTex;
+            float2 zw;
+            fixed4 color : COLOR;
+            float3 worldPos;
         };
 
         half _Glossiness;
@@ -40,11 +43,20 @@
             // put more per-instance properties here
         UNITY_INSTANCING_BUFFER_END(Props)
 
+        void vert (inout appdata_full v, out Input o) {
+            UNITY_INITIALIZE_OUTPUT(Input, o);
+            o.zw = v.texcoord.zw;
+        }
+
         void surf (Input IN, inout SurfaceOutputStandard o)
         {
             // Albedo comes from a texture tinted by color
             fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _Color;
-            clip(c.a - _AlphaClip);
+            float dist = length(IN.worldPos - _WorldSpaceCameraPos);
+            float range = lerp(999999.0, IN.zw.x, step(0.01, IN.zw.x)); // Profile.Radius
+            float fade = smoothstep(range/2, range*0.8, dist);
+            clip(c.a - lerp(_AlphaClip, 1, fade));
+
             o.Albedo = c.rgb;
             // Metallic and smoothness come from slider variables
             o.Metallic = _Metallic;

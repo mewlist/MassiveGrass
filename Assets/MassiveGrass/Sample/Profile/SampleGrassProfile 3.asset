@@ -26,3 +26,6 @@ MonoBehaviour:
   BuilderType: 0
   Mesh: {fileID: 4300000, guid: 38695b293c9425242ad10debf1b82439, type: 3}
   NormalType: 0
+  VertexDataDefinitions:
+  - VertexDataType: 4
+    OutDataType: 1
