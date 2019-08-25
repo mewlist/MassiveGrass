@@ -30,8 +30,8 @@ namespace Mewlist.MassiveGrass
                 foreach (var layer in layers)
                 {
                     var v = alphaMaps[layer].GetPixel(
-                        Mathf.RoundToInt((float) w * element.normalizedPosition.y),
-                        Mathf.RoundToInt((float) h * element.normalizedPosition.x)).a;
+                        Mathf.RoundToInt((float) w * element.normalizedPosition.x),
+                        Mathf.RoundToInt((float) h * element.normalizedPosition.y)).a;
                     alpha = Mathf.Max(alpha, v);
                 }
 

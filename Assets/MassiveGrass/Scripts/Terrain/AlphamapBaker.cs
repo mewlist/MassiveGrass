@@ -30,7 +30,7 @@ namespace Mewlist.MassiveGrass
                     var a = 0f;
                     for (var l = 0; l < layers.Length; l++)
                     {
-                        var v = alphaMaps[x, y, layers[l]];
+                        var v = alphaMaps[y, x, layers[l]];
                         a = Mathf.Max(a, v);
                     }
 
