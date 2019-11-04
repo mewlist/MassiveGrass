@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
+using UnityEngine.Rendering;
 
 namespace Mewlist.MassiveGrass
 {
@@ -61,12 +62,12 @@ namespace Mewlist.MassiveGrass
         private void OnEnable()
         {
             SetupBounds();
-            RenderPipeline.beginCameraRendering += OnBeginRender; // for SRP
+            RenderPipelineManager.beginCameraRendering += OnBeginRender; // for SRP
         }
 
         private void OnDisable()
         {
-            RenderPipeline.beginCameraRendering -= OnBeginRender; // for SRP
+            RenderPipelineManager.beginCameraRendering -= OnBeginRender; // for SRP
             Clear();
         }
 
@@ -103,10 +104,10 @@ namespace Mewlist.MassiveGrass
 
         private void OnWillRenderObject()
         {
-            OnBeginRender(Camera.current);
+            OnBeginRender(default, Camera.current);
         }
 
-        private void OnBeginRender(Camera camera)
+        private void OnBeginRender(ScriptableRenderContext context, Camera camera)
         {
             if (camera == null) return;
             if (!profiles.Any()) return;

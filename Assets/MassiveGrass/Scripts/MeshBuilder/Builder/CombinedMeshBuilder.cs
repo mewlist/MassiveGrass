@@ -9,7 +9,9 @@ namespace Mewlist.MassiveGrass
     public class CombinedMeshBuilder : IMeshBuilder
     {
         private Mesh cache;
-        public async Task<Mesh> Build(Terrain terrain, List<Texture2D> alphaMaps, MassiveGrassProfile profile, List<Element> elements)
+
+        public async Task<Mesh> Build(Terrain terrain, List<Texture2D> alphaMaps, MassiveGrassProfile profile,
+            List<Element> elements)
         {
             var terrainData = terrain.terrainData;
             var w           = terrainData.alphamapWidth;
@@ -25,8 +27,8 @@ namespace Mewlist.MassiveGrass
                 foreach (var layer in layers)
                 {
                     var v = alphaMaps[layer].GetPixel(
-                        Mathf.RoundToInt((float) w * element.normalizedPosition.x),
-                        Mathf.RoundToInt((float) h * element.normalizedPosition.y)).a;
+                        Mathf.RoundToInt((float) w * element.normalizedPosition.y),
+                        Mathf.RoundToInt((float) h * element.normalizedPosition.x)).a;
                     alpha = Mathf.Max(alpha, v);
                 }
 
@@ -38,7 +40,7 @@ namespace Mewlist.MassiveGrass
             if (cache == null)
             {
                 cache = Mesh.Instantiate(profile.Mesh);
-                switch(profile.NormalType)
+                switch (profile.NormalType)
                 {
                     case NormalType.KeepMesh:
                         break;
@@ -60,37 +62,42 @@ namespace Mewlist.MassiveGrass
                 var element  = elements[i];
                 if (alphas[i] >= profile.AlphaMapThreshold)
                 {
-                    var density = alphas[i];
-                    var rand    = ParkAndMiller.Get(element.index);
-                    var vColorR = profile.GetCustomVertexData(VertexDataType.VertexColorR, density, rand);
-                    var vColorG = profile.GetCustomVertexData(VertexDataType.VertexColorG, density, rand);
-                    var vColorB = profile.GetCustomVertexData(VertexDataType.VertexColorB, density, rand);
-                    var vColorA = profile.GetCustomVertexData(VertexDataType.VertexColorA, density, rand);
-                    var uv1Z    = profile.GetCustomVertexData(VertexDataType.UV1Z, density, rand);
-                    var uv1W    = profile.GetCustomVertexData(VertexDataType.UV1W, density, rand);
-                    var color = new Color(vColorR, vColorG, vColorB, vColorA);
+                    if (alphas[i] - profile.DensityFactor > ParkAndMiller.Get(i))
+                    {
+                        var density = alphas[i];
+                        var rand    = ParkAndMiller.Get(element.index);
+                        var vColorR = profile.GetCustomVertexData(VertexDataType.VertexColorR, density, rand);
+                        var vColorG = profile.GetCustomVertexData(VertexDataType.VertexColorG, density, rand);
+                        var vColorB = profile.GetCustomVertexData(VertexDataType.VertexColorB, density, rand);
+                        var vColorA = profile.GetCustomVertexData(VertexDataType.VertexColorA, density, rand);
+                        var uv1Z    = profile.GetCustomVertexData(VertexDataType.UV1Z, density, rand);
+                        var uv1W    = profile.GetCustomVertexData(VertexDataType.UV1W, density, rand);
+                        var color = new Color(vColorR, vColorG, vColorB, vColorA);
 
-                    Quaternion normalRot = Quaternion.LookRotation(element.normal); 
-                    Quaternion slant     = Quaternion.AngleAxis(profile.Slant * 90f * (rand - 0.5f), Vector3.right);
-                    Quaternion upRot     = Quaternion.AngleAxis(360f * rand, Vector3.up);
-                    Quaternion rot       = normalRot *
-                                           Quaternion.AngleAxis(90f, Vector3.right) *
-                                           upRot *
-                                           slant;
-                    var instance = new CombineInstance();
-                    instance.mesh = Mesh.Instantiate(cache);
-                    instance.mesh.colors = instance.mesh.colors.Select(_ => color).ToArray();
-                    var uvs = new List<Vector4>();
-                    instance.mesh.GetUVs(0, uvs);
-                    instance.mesh.SetUVs(0, uvs.Select(v => new Vector4(v.x, v.y, uv1Z, uv1W)).ToList());
-                    instance.transform = Matrix4x4.TRS(
-                        element.position + Vector3.up * profile.GroundOffset,
-                        rot,
-                        scale);
-                    combine.Add(instance);
+                        Quaternion normalRot = Quaternion.LookRotation(element.normal);
+                        Quaternion slant     = Quaternion.AngleAxis(profile.Slant * 90f * (rand - 0.5f), Vector3.right);
+                        Quaternion upRot     = Quaternion.AngleAxis(360f * rand, Vector3.up);
+                        Quaternion rot       = normalRot *
+                                               Quaternion.AngleAxis(90f, Vector3.right) *
+                                               upRot *
+                                               slant;
+                        var instance = new CombineInstance();
+                        instance.mesh = Mesh.Instantiate(cache);
+                        instance.mesh.colors = instance.mesh.colors.Select(_ => color).ToArray();
+                        var uvs = new List<Vector4>();
+                        instance.mesh.GetUVs(0, uvs);
+                        instance.mesh.SetUVs(0, uvs.Select(v => new Vector4(v.x, v.y, uv1Z, uv1W)).ToList());
+                        instance.transform = Matrix4x4.TRS(
+                            element.position + Vector3.up * profile.GroundOffset,
+                            rot,
+                            scale);
+                        combine.Add(instance);
+                    }
                 }
             }
+
             mesh.CombineMeshes(combine.ToArray());
+            mesh.name = "MassiveGrass Combined Mesh";
             return mesh;
         }
     }

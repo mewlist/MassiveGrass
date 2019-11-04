@@ -1,7 +1,12 @@
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+using Directory = UnityEngine.Windows.Directory;
+#endif
 
 namespace Mewlist.MassiveGrass
 {
@@ -18,6 +23,13 @@ namespace Mewlist.MassiveGrass
                 reserveBaking = true;
                 return;
             }
+
+            var terrainPath = AssetDatabase.GetAssetPath(targetTerrain.terrainData);
+            var terrainDir = Path.GetDirectoryName(terrainPath);
+            var terrainName = Path.GetFileNameWithoutExtension(terrainPath);
+            var bakeDir = Path.Combine(terrainDir, terrainName + "_MassiveGrass");
+            Directory.CreateDirectory(bakeDir);
+            Debug.Log("BakeDir: " + bakeDir);
 
             Debug.Log("Baking");
             baking = true;
@@ -36,8 +48,20 @@ namespace Mewlist.MassiveGrass
 
             for (var i = 0; i < layers; i++)
             {
+                var texturePath = Path.Combine(bakeDir, "alphamap" + i + ".png");
+                AssetDatabase.DeleteAsset(texturePath);
                 var texture = AlphamapBaker.CreateAndBake(targetTerrain, new [] {i});
-                bakedAlphaMaps.Add(texture);
+                byte [] pngData = texture.EncodeToPNG();
+                File.WriteAllBytes(texturePath, pngData);
+                AssetDatabase.ImportAsset(texturePath);
+                Debug.Log("load " + texturePath);
+
+                var importer = AssetImporter.GetAtPath(texturePath) as TextureImporter;
+                importer.isReadable = true;
+                AssetDatabase.ImportAsset(texturePath, ImportAssetOptions.ForceUpdate);
+
+                var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(texturePath);
+                bakedAlphaMaps.Add(tex);
             }
 
             baking = false;

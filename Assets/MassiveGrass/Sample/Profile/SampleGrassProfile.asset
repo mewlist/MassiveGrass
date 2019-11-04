@@ -22,6 +22,7 @@ MonoBehaviour:
   Material: {fileID: 2100000, guid: 470b29f8e72d20f41ae6d3b55795790d, type: 2}
   Layer: 0
   AlphaMapThreshold: 0.5
+  DensityFactor: 0.5
   CastShadows: 0
   BuilderType: 0
   Mesh: {fileID: 0}
@@ -29,3 +30,4 @@ MonoBehaviour:
   VertexDataDefinitions:
   - VertexDataType: 4
     OutDataType: 1
+  Seed: 0

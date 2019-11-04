@@ -52,9 +52,11 @@
         {
             // Albedo comes from a texture tinted by color
             fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _Color;
+
             float dist = length(IN.worldPos - _WorldSpaceCameraPos);
             float range = lerp(999999.0, IN.zw.x, step(0.01, IN.zw.x)); // Profile.Radius
             float fade = smoothstep(range/2, range*0.8, dist);
+
             clip(c.a - lerp(_AlphaClip, 1, fade));
 
             o.Albedo = c.rgb;

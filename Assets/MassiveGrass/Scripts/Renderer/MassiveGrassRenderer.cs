@@ -88,6 +88,7 @@ namespace Mewlist.MassiveGrass
                 return;
             }
 
+            mesh.name += " Active";
             meshes[index] = mesh;
             requestQueue.Remove(index);
         }

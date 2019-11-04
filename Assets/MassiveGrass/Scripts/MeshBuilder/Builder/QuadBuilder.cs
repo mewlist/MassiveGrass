@@ -29,10 +29,18 @@ namespace Mewlist.MassiveGrass
 
                 foreach (var layer in layers)
                 {
-                    var v = alphaMaps[layer].GetPixel(
-                        Mathf.RoundToInt((float) w * element.normalizedPosition.x),
-                        Mathf.RoundToInt((float) h * element.normalizedPosition.y)).a;
-                    alpha = Mathf.Max(alpha, v);
+                    try
+                    {
+                        var v = alphaMaps[layer].GetPixel(
+                            Mathf.RoundToInt((float) w * element.normalizedPosition.y),
+                            Mathf.RoundToInt((float) h * element.normalizedPosition.x)).a;
+                        alpha = Mathf.Max(alpha, v);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                        throw;
+                    }
                 }
 
                 alphas[i] = alpha;
@@ -45,11 +53,15 @@ namespace Mewlist.MassiveGrass
                 {
                     var element  = elements[i];
                     if (alphas[i] >= profile.AlphaMapThreshold)
-                        AddQuad(meshData, profile, element, alphas[i], actualCount++);
+                    {
+                        if (alphas[i] + profile.DensityFactor > ParkAndMiller.Get(i))
+                            AddQuad(meshData, profile, element, alphas[i], actualCount++);
+                    }
                 }
             });
 
             var mesh = new Mesh();
+            mesh.name = "MassiveGrass Quad Mesh";
             mesh.vertices  = meshData.vertices.Take(4 * actualCount).ToArray();
             mesh.normals   = meshData.normals.Take(4 * actualCount).ToArray();
             mesh.triangles = meshData.triangles.Take(6 * actualCount).ToArray();
@@ -71,11 +83,13 @@ namespace Mewlist.MassiveGrass
                                    Quaternion.AngleAxis(90f, Vector3.right) *
                                    upRot *
                                    slant;
-            var scale = profile.Scale;
-            var p1 = rot * new Vector3(-0.5f * scale.x, 1f * scale.y, 0f) + Vector3.up * profile.GroundOffset;
-            var p2 = rot * new Vector3( 0.5f * scale.x, 1f * scale.y, 0f) + Vector3.up * profile.GroundOffset;
-            var p3 = rot * new Vector3( 0.5f * scale.x, 0f,           0f) + Vector3.up * profile.GroundOffset;
-            var p4 = rot * new Vector3(-0.5f * scale.x, 0f,           0f) + Vector3.up * profile.GroundOffset;
+            var scale = profile.Scale * (1 + 0.4f * (rand - 0.5f));
+            var rightVec = rot * Vector3.right;
+            var upVec = rot * Vector3.up;
+            var p1 = scale.x * -rightVec * 0.5f + scale.y * upVec + Vector3.up * profile.GroundOffset;
+            var p2 = scale.x *  rightVec * 0.5f + scale.y * upVec + Vector3.up * profile.GroundOffset;
+            var p3 = scale.x *  rightVec * 0.5f + Vector3.up * profile.GroundOffset;
+            var p4 = scale.x * -rightVec * 0.5f + Vector3.up * profile.GroundOffset;
             var normal = element.normal;
             var normalBottom = element.normal;
             switch(profile.NormalType)
@@ -111,10 +125,16 @@ namespace Mewlist.MassiveGrass
             meshData.uvs[vOrigin+1] = new Vector4(1f, 1f, uv1Z, uv1W);
             meshData.uvs[vOrigin+2] = new Vector4(1f, 0f, uv1Z, uv1W);
             meshData.uvs[vOrigin+3] = new Vector4(0f, 0f, uv1Z, uv1W);
-            meshData.colors[vOrigin+0] = color;
-            meshData.colors[vOrigin+1] = color;
-            meshData.colors[vOrigin+2] = color;
-            meshData.colors[vOrigin+3] = color;
+//            meshData.colors[vOrigin+0] = color;
+//            meshData.colors[vOrigin+1] = color;
+//            meshData.colors[vOrigin+2] = color;
+//            meshData.colors[vOrigin+3] = color;
+//            meshData.colors[vOrigin+0] = new Color(-0.5f * rightVec.x, -0.5f * rightVec.y, -0.5f * rightVec.z);
+//            meshData.colors[vOrigin+1] = new Color(0.5f * rightVec.x, 0.5f * rightVec.y, 0.5f * rightVec.z);
+            meshData.colors[vOrigin+0] = new Color(-rightVec.x, -rightVec.y, -rightVec.z);
+            meshData.colors[vOrigin+1] = new Color(rightVec.x,  rightVec.y,  rightVec.z);
+            meshData.colors[vOrigin+2] = new Color(rightVec.x, rightVec.y, rightVec.z);
+            meshData.colors[vOrigin+3] = new Color(-rightVec.x, -rightVec.y, -rightVec.z);
             meshData.triangles[iOrigin+0] = vOrigin+0;
             meshData.triangles[iOrigin+1] = vOrigin+1;
             meshData.triangles[iOrigin+2] = vOrigin+2;

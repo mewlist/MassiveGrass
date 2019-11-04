@@ -46,8 +46,8 @@ namespace Mewlist.MassiveGrass
                 for (var i = 0; i < profile.AmountPerBlock; i++)
                 {
                     haltons[i] = new Vector2(
-                        HaltonSequence.Base2(i + haltonOffset),
-                        HaltonSequence.Base3(i + haltonOffset));
+                        HaltonSequence.Base2(i + haltonOffset + profile.Seed),
+                        HaltonSequence.Base3(i + haltonOffset + profile.Seed));
                     normalizedPositions[i] = localNormalizedRect.min + haltons[i] * localNormalizedRect.size;
                 }
             });
@@ -58,6 +58,7 @@ namespace Mewlist.MassiveGrass
                 {
                     for (var i = 0; i < profile.AmountPerBlock; i++)
                     {
+                        if (terrain == null) break;
                         var normalizedPosition = normalizedPositions[i];
                         heights[i] =
                             terrain.terrainData.GetInterpolatedHeight(normalizedPosition.x, normalizedPosition.y);

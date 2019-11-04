@@ -57,11 +57,13 @@ namespace Mewlist.MassiveGrass
         [SerializeField]        public Material    Material;
         [SerializeField, Layer] public int         Layer = 0;
         [SerializeField]        public float       AlphaMapThreshold = 0.3f;
+        [SerializeField]        public float       DensityFactor = 0.5f;
         [SerializeField]        public bool        CastShadows = false;
         [SerializeField]        public BuilderType BuilderType;
         [SerializeField]        public Mesh        Mesh;
         [SerializeField]        public NormalType  NormalType = NormalType.Up;
         [SerializeField]        public CustomVertexData[] VertexDataDefinitions;
+        [SerializeField]        public int         Seed;
         public IMeshBuilder CreateBuilder()
         {
             switch(BuilderType)
