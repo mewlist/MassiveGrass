@@ -33,7 +33,7 @@ namespace Mewlist.MassiveGrass
                         var v = alphaMaps[x, y, layers[l]];
                         a = Mathf.Max(a, v);
                     }
-                    to.SetPixel(x, y, new Color(a, 0, 0, a));
+                    to.SetPixel(x, y, new Color(0, 0, 0, a));
                 }
             }
         }
