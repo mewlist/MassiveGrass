@@ -1,0 +1,15 @@
+{
+    "name": "MassiveGrassEditor",
+    "references": [
+        "GUID:d9ffa5cf7d8d4d645a276f2da3e49d66"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
