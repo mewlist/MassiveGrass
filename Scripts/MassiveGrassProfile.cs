@@ -9,7 +9,6 @@ namespace Mewlist.MassiveGrass
     {
         Quad = 0,
         FromMesh = 5,
-        MeshCombine = 10,
     }
     
     public enum NormalType
@@ -34,6 +33,12 @@ namespace Mewlist.MassiveGrass
         Density,
         Range,
         Random,
+        VertexPosX,
+        VertexPosY,
+        VertexPosZ,
+        PivotX,
+        PivotY,
+        PivotZ,
         CustomData1,
         CustomData2,
     }
@@ -41,11 +46,10 @@ namespace Mewlist.MassiveGrass
     [Serializable]
     public struct CustomVertexData
     {
-        public VertexDataType VertexDataType;
         public OutDataType    OutDataType;
     }
     
-    [CreateAssetMenu(fileName = "MkassiveGrass", menuName = "MassiveGrass", order = 1)]
+    [CreateAssetMenu(fileName = "MassiveGrass", menuName = "MassiveGrass", order = 1)]
     public class MassiveGrassProfile : ScriptableObject
     {
         [SerializeField] public TerrainLayer[] TerrainLayers = new TerrainLayer[] { };
@@ -63,7 +67,12 @@ namespace Mewlist.MassiveGrass
         [SerializeField]        public BuilderType BuilderType;
         [SerializeField]        public Mesh        Mesh;
         [SerializeField]        public NormalType  NormalType = NormalType.Up;
-        [SerializeField]        public CustomVertexData[] VertexDataDefinitions;
+        [SerializeField]        public CustomVertexData UV1Z;
+        [SerializeField]        public CustomVertexData UV1W;
+        [SerializeField]        public CustomVertexData VertexColorR;
+        [SerializeField]        public CustomVertexData VertexColorG;
+        [SerializeField]        public CustomVertexData VertexColorB;
+        [SerializeField]        public CustomVertexData VertexColorA;
         [SerializeField]        public int         Seed;
         [SerializeField] public Vector2 HeightRange;
         public IMeshBuilder CreateBuilder()
@@ -74,37 +83,78 @@ namespace Mewlist.MassiveGrass
                     return new QuadBuilder();
                 case BuilderType.FromMesh:
                     return new FromMeshBuilder();
-                case BuilderType.MeshCombine:
-                    return new CombinedMeshBuilder();
                 default:
                     throw new ArgumentOutOfRangeException();
             }
         }
 
-        public float GetCustomVertexData(VertexDataType vertexDataType, float density, float rand)
+        public float GetCustomVertexData(VertexDataType vertexDataType, VertAttribute attr)
         {
-            foreach (var v in VertexDataDefinitions)
+            switch (vertexDataType)
             {
-                if (vertexDataType == v.VertexDataType)
-                    return GetData(v.OutDataType, density, rand);
+                case VertexDataType.VertexColorR:
+                    return GetData(VertexColorR.OutDataType, attr);
+                case VertexDataType.VertexColorG:
+                    return GetData(VertexColorG.OutDataType, attr);
+                case VertexDataType.VertexColorB:
+                    return GetData(VertexColorB.OutDataType, attr);
+                case VertexDataType.VertexColorA:
+                    return GetData(VertexColorA.OutDataType, attr);
+                case VertexDataType.UV1Z:
+                    return GetData(UV1Z.OutDataType, attr);
+                case VertexDataType.UV1W:
+                    return GetData(UV1W.OutDataType, attr);
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(vertexDataType), vertexDataType, null);
             }
-            return 0f;
         }
 
-        private float GetData(OutDataType outDataType, float density, float rand)
+        private float GetData(OutDataType outDataType, VertAttribute attr)
         {
             switch(outDataType)
             {
                 case OutDataType.Density:
-                    return density;
+                    return attr.Density;
                 case OutDataType.Range:
                     return Radius;
                 case OutDataType.Random:
-                    return rand;
+                    return attr.Rand;
+                case OutDataType.VertexPosX:
+                    return attr.VertPos.x;
+                case OutDataType.VertexPosY:
+                    return attr.VertPos.y;
+                case OutDataType.VertexPosZ:
+                    return attr.VertPos.z;
+                case OutDataType.PivotX:
+                    return attr.Pivot.x;
+                case OutDataType.PivotY:
+                    return attr.Pivot.y;
+                case OutDataType.PivotZ:
+                    return attr.Pivot.z;
                 case OutDataType.CustomData1:
                 case OutDataType.CustomData2:
                 default:
                     throw new ArgumentOutOfRangeException(nameof(outDataType), outDataType, null);
+            }
+        }
+
+        public struct VertAttribute
+        {
+            public readonly float Density;
+            public readonly float Rand;
+            public readonly Vector3 Pivot;
+            public readonly Vector3 VertPos;
+
+            public VertAttribute(
+                float density,
+                float rand,
+                Vector3 pivot,
+                Vector3 vertPos)
+            {
+                Density = density;
+                Rand = rand;
+                Pivot = pivot;
+                VertPos = vertPos;
             }
         }
     }

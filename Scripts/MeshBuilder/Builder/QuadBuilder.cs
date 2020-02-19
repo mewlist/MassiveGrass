@@ -117,14 +117,14 @@ namespace Mewlist.MassiveGrass
             var vOrigin = index * 4;
             var iOrigin = index * 6;
             var rand    = ParkAndMiller.Get(element.index);
-            Quaternion normalRot = Quaternion.LookRotation(element.normal); 
-            Quaternion slant     = Quaternion.AngleAxis(profile.Slant * 90f * (rand - 0.5f), Vector3.right);
-            Quaternion slantWeak = Quaternion.AngleAxis(profile.Slant * 45f * (rand - 0.5f), Vector3.right);
-            Quaternion upRot     = Quaternion.AngleAxis(360f * rand, Vector3.up);
-            Quaternion rot       = normalRot *
-                                   Quaternion.AngleAxis(90f, Vector3.right) *
-                                   upRot *
-                                   slant;
+            var normalRot = Quaternion.LookRotation(element.normal); 
+            var slant     = Quaternion.AngleAxis(profile.Slant * 90f * (rand - 0.5f), Vector3.right);
+            var slantWeak = Quaternion.AngleAxis(profile.Slant * 45f * (rand - 0.5f), Vector3.right);
+            var upRot     = Quaternion.AngleAxis(360f * rand, Vector3.up);
+            var rot       = normalRot *
+                                        Quaternion.AngleAxis(90f, Vector3.right) *
+                                        upRot *
+                                        slant;
             var scale = profile.Scale * (1 + 0.4f * (rand - 0.5f));
             var rightVec = rot * Vector3.right;
             var upVec = rot * Vector3.up;
@@ -148,14 +148,6 @@ namespace Mewlist.MassiveGrass
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            var vColorR = profile.GetCustomVertexData(VertexDataType.VertexColorR, density, rand);
-            var vColorG = profile.GetCustomVertexData(VertexDataType.VertexColorG, density, rand);
-            var vColorB = profile.GetCustomVertexData(VertexDataType.VertexColorB, density, rand);
-            var vColorA = profile.GetCustomVertexData(VertexDataType.VertexColorA, density, rand);
-            var uv1Z    = profile.GetCustomVertexData(VertexDataType.UV1Z, density, rand);
-            var uv1W    = profile.GetCustomVertexData(VertexDataType.UV1W, density, rand);
-
-            var color = new Color(vColorR, vColorG, vColorB, vColorA);
             meshData.vertices[vOrigin+0] = element.position + p1;
             meshData.vertices[vOrigin+1] = element.position + p2;
             meshData.vertices[vOrigin+2] = element.position + p3;
@@ -164,20 +156,60 @@ namespace Mewlist.MassiveGrass
             meshData.normals[vOrigin+1] = normal;
             meshData.normals[vOrigin+2] = normalBottom;
             meshData.normals[vOrigin+3] = normalBottom;
-            meshData.uvs[vOrigin+0] = new Vector4(0f, 1f, uv1Z, p1.y);
-            meshData.uvs[vOrigin+1] = new Vector4(1f, 1f, uv1Z, p2.y);
-            meshData.uvs[vOrigin+2] = new Vector4(1f, 0f, uv1Z, p3.y);
-            meshData.uvs[vOrigin+3] = new Vector4(0f, 0f, uv1Z, p4.y);
-//            meshData.colors[vOrigin+0] = color;
-//            meshData.colors[vOrigin+1] = color;
-//            meshData.colors[vOrigin+2] = color;
-//            meshData.colors[vOrigin+3] = color;
-//            meshData.colors[vOrigin+0] = new Color(-0.5f * rightVec.x, -0.5f * rightVec.y, -0.5f * rightVec.z);
-//            meshData.colors[vOrigin+1] = new Color(0.5f * rightVec.x, 0.5f * rightVec.y, 0.5f * rightVec.z);
-            meshData.colors[vOrigin+0] = new Color(-rightVec.x, -rightVec.y, -rightVec.z);
-            meshData.colors[vOrigin+1] = new Color(rightVec.x,  rightVec.y,  rightVec.z);
-            meshData.colors[vOrigin+2] = new Color(rightVec.x, rightVec.y, rightVec.z);
-            meshData.colors[vOrigin+3] = new Color(-rightVec.x, -rightVec.y, -rightVec.z);
+
+            var attr1 = new MassiveGrassProfile.VertAttribute(density, rand, element.position, p1);
+            var attr2 = new MassiveGrassProfile.VertAttribute(density, rand, element.position, p2);
+            var attr3 = new MassiveGrassProfile.VertAttribute(density, rand, element.position, p3);
+            var attr4 = new MassiveGrassProfile.VertAttribute(density, rand, element.position, p4);
+
+            {
+                var vColorR = profile.GetCustomVertexData(VertexDataType.VertexColorR, attr1);
+                var vColorG = profile.GetCustomVertexData(VertexDataType.VertexColorG, attr1);
+                var vColorB = profile.GetCustomVertexData(VertexDataType.VertexColorB, attr1);
+                var vColorA = profile.GetCustomVertexData(VertexDataType.VertexColorA, attr1);
+                meshData.colors[vOrigin + 0] = new Color(vColorR, vColorG, vColorB, vColorA);
+            }
+            {
+                var vColorR = profile.GetCustomVertexData(VertexDataType.VertexColorR, attr2);
+                var vColorG = profile.GetCustomVertexData(VertexDataType.VertexColorG, attr2);
+                var vColorB = profile.GetCustomVertexData(VertexDataType.VertexColorB, attr2);
+                var vColorA = profile.GetCustomVertexData(VertexDataType.VertexColorA, attr2);
+                meshData.colors[vOrigin+1] = new Color(vColorR, vColorG, vColorB, vColorA);
+            }
+            {
+                var vColorR = profile.GetCustomVertexData(VertexDataType.VertexColorR, attr3);
+                var vColorG = profile.GetCustomVertexData(VertexDataType.VertexColorG, attr3);
+                var vColorB = profile.GetCustomVertexData(VertexDataType.VertexColorB, attr3);
+                var vColorA = profile.GetCustomVertexData(VertexDataType.VertexColorA, attr3);
+                meshData.colors[vOrigin+2] = new Color(vColorR, vColorG, vColorB, vColorA);
+            }
+            {
+                var vColorR = profile.GetCustomVertexData(VertexDataType.VertexColorR, attr4);
+                var vColorG = profile.GetCustomVertexData(VertexDataType.VertexColorG, attr4);
+                var vColorB = profile.GetCustomVertexData(VertexDataType.VertexColorB, attr4);
+                var vColorA = profile.GetCustomVertexData(VertexDataType.VertexColorA, attr4);
+                meshData.colors[vOrigin+3] = new Color(vColorR, vColorG, vColorB, vColorA);
+            }
+            {
+                var uv1Z    = profile.GetCustomVertexData(VertexDataType.UV1Z, attr1);
+                var uv1W    = profile.GetCustomVertexData(VertexDataType.UV1W, attr1);
+                meshData.uvs[vOrigin+0] = new Vector4(0f, 1f, uv1Z, uv1W);
+            }
+            {
+                var uv1Z    = profile.GetCustomVertexData(VertexDataType.UV1Z, attr2);
+                var uv1W    = profile.GetCustomVertexData(VertexDataType.UV1W, attr2);
+                meshData.uvs[vOrigin+1] = new Vector4(1f, 1f, uv1Z, uv1W);
+            }
+            {
+                var uv1Z    = profile.GetCustomVertexData(VertexDataType.UV1Z, attr3);
+                var uv1W    = profile.GetCustomVertexData(VertexDataType.UV1W, attr3);
+                meshData.uvs[vOrigin+2] = new Vector4(1f, 0f, uv1Z, uv1W);
+            }
+            {
+                var uv1Z    = profile.GetCustomVertexData(VertexDataType.UV1Z, attr4);
+                var uv1W    = profile.GetCustomVertexData(VertexDataType.UV1W, attr4);
+                meshData.uvs[vOrigin+3] = new Vector4(0f, 0f, uv1Z, uv1W);
+            }
             meshData.triangles[iOrigin+0] = vOrigin+0;
             meshData.triangles[iOrigin+1] = vOrigin+1;
             meshData.triangles[iOrigin+2] = vOrigin+2;

@@ -1,23 +1,21 @@
 # MassiveGrass
 
-![Sample Image](https://github.com/mewlist/MassiveGrass/blob/master/MassiveGrassImage.png?raw=true)
-
 Terrain の地形に沿って大量の草を生やします。
 
-Unity2018.4 以降に対応
+Unity2019.3 以降に対応
 
-## 使い方
+## インストール
+
+PackageManageer に Github の リポジトリ uri を指定してください。
 
 ### セットアップ
 
 - 任意の GameObject に MassiveGrass コンポーネントを追加します
-- Target Terrain に草をはやしたい Terrain を指定します
-- Bake ボタンを押して，Terrain の AlphaMap (塗り分け情報) を取得します
 
 ### プロファイルの作成
 
 - 右クリックメニューから MassiveGrass を選択して MassiveGrassProfile を作成しパラメータを調整します
-- Paint Texture Index : 草をはやしたい AlphaMap のインデックスを指定します
+- TerrainLayers : 草をはやしたい TerrainLayers を指定します。 Terrain Layer で塗られた場所に草を生やします。
 - Scale : 草一つ分の Quad メッシュのサイズ
 - Radius : 視点からの最大生成距離
 - Grid Size : Terrain をグリッドに分割する際の 1 グリッド四方あたりの辺の長さ
@@ -27,9 +25,12 @@ Unity2018.4 以降に対応
 - Layer : 生成する Unity レイヤ
 - Alpha Map Threshold : Alphamap の濃さがこの閾値を超えた場所に草を生成
 - Cast Shadows : 影の ON / OFF
+- BuilderType
+  - Quad : 正方形メッシュを生成します
+  - FromMesh : 指定した Mesh を複製して生成します
 
 ### サンプルシーン
 
-- MassiveGrass/Sample/SampleScene.unity で動作を確認できます
-- WASD キーで移動，マウスのドラッグで視線の移動が出来ます
+サンプルシーンを以下で公開しています。
+https://github.com/mewlist/MassiveGrassExample
 
