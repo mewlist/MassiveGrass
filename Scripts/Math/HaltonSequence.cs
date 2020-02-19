@@ -1,17 +1,10 @@
-﻿using System.Threading;
-
-public static class HaltonSequence
+﻿public static class HaltonSequence
 {
-    private static Mutex objMutex = new Mutex();
+    private static float[] result2;
+    private static float[] result3;
 
-    public static float[] result2;
-    public static float[] result3;
-
-    public static void Clear() => result3 = result2 = null;
-
-    public static float Base2(int index)
+    public static void Warmup()
     {
-        objMutex.WaitOne();
         if (result2 == null)
         {
             if (result2 == null) result2 = new float[100000];
@@ -22,13 +15,7 @@ public static class HaltonSequence
                 result2[i] = (float)a / max;
             }
         }
-        objMutex.ReleaseMutex();
-        return result2[index];
-    }
 
-    public static float Base3(int index)
-    {
-        objMutex.WaitOne();
         if (result3 == null)
         {
             if (result3 == null) result3 = new float[100000];
@@ -47,7 +34,15 @@ public static class HaltonSequence
                 result3[i] = r;
             }
         }
-        objMutex.ReleaseMutex();
+    }
+
+    public static float Base2(int index)
+    {
+        return result2[index];
+    }
+
+    public static float Base3(int index)
+    {
         return result3[index];
     }
 

@@ -34,7 +34,7 @@ namespace Mewlist.MassiveGrass
                 boundsMesh.name = "Massive Grass Terrain Bounds";
             }
 
-//            boundsMesh.bounds = targetTerrain.terrainData.bounds;
+            // TODO: correct bounds
             boundsMesh.bounds = new Bounds(Vector3.zero, 50000f * Vector3.one);
             MeshFilter.sharedMesh = boundsMesh;
         }
@@ -53,6 +53,8 @@ namespace Mewlist.MassiveGrass
 
         private void OnEnable()
         {
+            HaltonSequence.Warmup();
+            ParkAndMiller.Warmup();
             SetupBounds();
             RenderPipelineManager.beginCameraRendering += OnBeginRender; // for SRP
         }

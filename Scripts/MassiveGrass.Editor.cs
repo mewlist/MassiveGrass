@@ -19,8 +19,6 @@ namespace Mewlist.MassiveGrass
         public void Refresh()
         {
             Debug.Log("Refresh");
-            ParkAndMiller.Clear();
-            HaltonSequence.Clear();
             foreach (var cameraCollection in rendererCollections.Values)
                 foreach (var massiveGrassRenderer in cameraCollection.Values)
                     massiveGrassRenderer.Dispose();

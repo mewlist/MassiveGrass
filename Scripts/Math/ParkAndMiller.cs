@@ -1,33 +1,20 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Threading;
-using UnityEngine;
+﻿using System.Collections.Generic;
 
 public class ParkAndMiller
 {
-    private static Mutex objMutex = new Mutex();
-
     private static List<int> cache;
+
+    public static void Warmup()
+    {
+        cache = new List<int>();
+        for (var i = cache.Count; i <= 10000; i++)
+            cache.Add(i == 0 ? 1 : Next(cache[i - 1]));
+    }
+    
+    
     public static float Get(int index)
     {
-        objMutex.WaitOne();
-        if (cache == null) cache = new List<int>();
-        if (cache.Count <= index)
-        {
-            for (var i = cache.Count; i <= index; i++)
-            {
-                cache.Add(i == 0 ? 1 : Next(cache[i - 1]));
-            }
-        }
-        objMutex.ReleaseMutex();
         return cache[index] % 10000 / 10000f;
-    }
-
-    public static void Clear()
-    {
-        objMutex.WaitOne();
-        cache = null;
-        objMutex.ReleaseMutex();
     }
 
     private static int Next(int prev)

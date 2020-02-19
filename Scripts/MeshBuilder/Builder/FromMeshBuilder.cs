@@ -144,7 +144,7 @@ namespace Mewlist.MassiveGrass
 
             for (var i = 0; i < templateData.vertexCount; i++)
             {
-                var vertPos = element.position +
+                var vertPos = element.position + Vector3.up * profile.GroundOffset +
                               rot * Vector3.Scale(templateData.scaledVertices[i], scale);
                 meshData.vertices[vOrigin + i] = vertPos;
                 switch (profile.NormalType)
