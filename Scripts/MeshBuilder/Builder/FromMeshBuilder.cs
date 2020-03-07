@@ -69,9 +69,9 @@ namespace Mewlist.MassiveGrass
                     var texIndex = layer / 4;
                     if (texIndex < alphaMaps.Count)
                     {
-                        var pixel = alphaMaps.ElementAt(layer / 4).GetPixel(
-                            Mathf.RoundToInt(w * element.normalizedPosition.x),
-                            Mathf.RoundToInt(h * element.normalizedPosition.y));
+                        var pixel = alphaMaps.ElementAt(layer / 4).GetPixelBilinear(
+                            element.normalizedPosition.x * (w - 1f) / w,
+                            element.normalizedPosition.y * (h - 1f) / h);
                         switch (layer % 4)
                         {
                             case 0:
